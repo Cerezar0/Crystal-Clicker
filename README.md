@@ -4,7 +4,7 @@
 
 ## 🎮 Играть
 
-👉 [Cerezar.github.io/crystal-clicker](https://Cerezar.github.io/crystal-clicker/)
+👉 [[Cerezar.github.io/crystal-clicker](https://Cerezar.github.io/crystal-clicker/)](https://Cerezar0.github.io/Crystal-Clicker/)
 
 ## ✨ Фичи
 

@@ -1,0 +1,1171 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Crystal Clicker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg-1: #090716;
+      --bg-2: #1b1140;
+      --bg-3: #0a2b57;
+      --glass: rgba(255, 255, 255, 0.12);
+      --glass-strong: rgba(255, 255, 255, 0.17);
+      --glass-border: rgba(255, 255, 255, 0.3);
+      --text: #f5f7ff;
+      --muted: rgba(245, 247, 255, 0.76);
+      --good: #7effd9;
+      --crit: #ffd369;
+      --amethyst: #d69bff;
+      --emerald: #7dcf8a;
+      --ruby: #d84b64;
+      --panel-offset: 84px;
+      --panel-open-offset: 400px;
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      font-family: "Inter", sans-serif;
+      color: var(--text);
+      overflow: hidden;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+    }
+
+    body {
+      min-height: 100dvh;
+      display: grid;
+      place-items: stretch;
+      padding: calc(env(safe-area-inset-top) + 12px) calc(env(safe-area-inset-right) + 12px) calc(env(safe-area-inset-bottom) + 12px) calc(env(safe-area-inset-left) + 12px);
+      background:
+        radial-gradient(1000px 600px at 20% 20%, rgba(159, 141, 255, 0.25), transparent 60%),
+        radial-gradient(900px 500px at 80% 80%, rgba(126, 232, 255, 0.2), transparent 60%),
+        linear-gradient(135deg, var(--bg-1), var(--bg-2) 45%, var(--bg-3));
+      position: relative;
+      isolation: isolate;
+    }
+
+    body::before {
+      content: "";
+      position: absolute;
+      inset: -20%;
+      background: radial-gradient(circle, rgba(255,255,255,0.08) 1px, transparent 1.5px) 0 0 / 40px 40px;
+      opacity: 0.28;
+      z-index: -1;
+      pointer-events: none;
+    }
+
+    .info-toggle {
+      position: fixed;
+      left: 12px;
+      top: 110px;
+      width: 58px;
+      height: 122px;
+      border-radius: 14px;
+      border: 1px solid var(--glass-border);
+      background: var(--glass);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      z-index: 30;
+      transition: transform 0.2s ease, background 0.2s ease;
+    }
+
+    .info-toggle:hover {
+      background: rgba(255, 255, 255, 0.18);
+      transform: translateX(2px);
+    }
+
+    .info-toggle svg {
+      width: 30px;
+      height: 30px;
+      opacity: 0.85;
+      filter: drop-shadow(0 0 8px rgba(126, 232, 255, 0.5));
+    }
+
+    .info-panel {
+      position: fixed;
+      left: 82px;
+      top: 90px;
+      bottom: 24px;
+      width: min(300px, 78vw);
+      border-radius: 16px;
+      background: rgba(8, 12, 28, 0.86);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.45);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      padding: 14px;
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr);
+      gap: 12px;
+      transform: translateX(-120%);
+      opacity: 0;
+      pointer-events: none;
+      transition: transform 0.25s ease, opacity 0.2s ease;
+      z-index: 29;
+    }
+
+    .info-panel.open {
+      transform: translateX(0);
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .info-title {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 800;
+    }
+
+    .info-list {
+      min-height: 0;
+      overflow-y: auto;
+      display: grid;
+      gap: 10px;
+      padding-right: 4px;
+      align-content: start;
+    }
+
+    .info-card {
+      background: rgba(255, 255, 255, 0.07);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 12px;
+      padding: 10px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .info-card-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .info-name {
+      margin: 0;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .state-badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 7px;
+      border-radius: 999px;
+      border: 1px solid transparent;
+      white-space: nowrap;
+    }
+
+    .state-badge.active {
+      color: #e8fff2;
+      background: rgba(46, 207, 112, 0.2);
+      border-color: rgba(126, 255, 175, 0.45);
+    }
+
+    .state-badge.inactive {
+      color: #ffd9d9;
+      background: rgba(255, 143, 143, 0.18);
+      border-color: rgba(255, 143, 143, 0.4);
+    }
+
+    .info-desc {
+      margin: 0;
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.35;
+    }
+
+    .app {
+      height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 24px);
+      width: calc(100% - var(--panel-offset));
+      margin-left: var(--panel-offset);
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) clamp(300px, 23vw, 390px);
+      gap: clamp(16px, 2vw, 28px);
+      align-items: stretch;
+      transition: width 0.25s ease, margin-left 0.25s ease;
+    }
+
+    body.panel-open .app {
+      width: calc(100% - var(--panel-open-offset));
+      margin-left: var(--panel-open-offset);
+    }
+
+    .left-stack {
+      min-width: 0;
+      display: grid;
+      grid-template-rows: auto auto minmax(0, 1fr);
+      gap: clamp(12px, 2vh, 18px);
+      height: 100%;
+    }
+
+    .evo-track-panel {
+      width: 100%;
+      display: grid;
+      gap: 12px;
+      padding: 18px 16px;
+      border-radius: 18px;
+      background: linear-gradient(130deg, rgba(214, 155, 255, 0.12), rgba(154, 91, 226, 0.09));
+      border: 1px solid rgba(214, 155, 255, 0.38);
+      box-shadow: 0 12px 26px rgba(0, 0, 0, 0.28), 0 0 20px rgba(154, 91, 226, 0.16);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+
+    .evo-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    .evo-top strong {
+      font-weight: 700;
+    }
+
+    .evo-row {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .evo-track {
+      width: 100%;
+      height: 18px;
+      border-radius: 999px;
+      overflow: hidden;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.22);
+    }
+
+    .evo-fill {
+      width: 0%;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, rgba(126, 232, 255, 0.95), rgba(214, 155, 255, 0.95));
+      box-shadow: 0 0 18px rgba(214, 155, 255, 0.45);
+      transition: width 0.2s ease, background 0.2s ease;
+    }
+
+    .evo-end {
+      display: grid;
+      justify-items: center;
+      gap: 2px;
+      min-width: 74px;
+    }
+
+    .evo-end-name {
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1;
+      color: var(--amethyst);
+    }
+
+    .evo-mini {
+      width: 24px;
+      height: 24px;
+      transition: filter 0.2s ease;
+    }
+
+    .evo-mini.amethyst {
+      filter: drop-shadow(0 0 8px rgba(214, 155, 255, 0.85)) drop-shadow(0 0 15px rgba(154, 91, 226, 0.65));
+    }
+
+    .evo-mini.amethyst .mini-stop-1 { stop-color: #f2d6ff; }
+    .evo-mini.amethyst .mini-stop-2 { stop-color: #d69bff; }
+    .evo-mini.amethyst .mini-stop-3 { stop-color: #9a5be2; }
+
+    .evo-mini.emerald {
+      filter: drop-shadow(0 0 8px rgba(125, 207, 138, 0.85)) drop-shadow(0 0 15px rgba(77, 139, 92, 0.7));
+    }
+
+    .evo-mini.emerald .mini-stop-1 { stop-color: #d4ebd8; }
+    .evo-mini.emerald .mini-stop-2 { stop-color: #7dcf8a; }
+    .evo-mini.emerald .mini-stop-3 { stop-color: #4d8b5c; }
+
+    .evo-mini.ruby {
+      filter: drop-shadow(0 0 8px rgba(216, 75, 100, 0.85)) drop-shadow(0 0 15px rgba(130, 30, 50, 0.72));
+    }
+
+    .evo-mini.ruby .mini-stop-1 { stop-color: #ffb7c4; }
+    .evo-mini.ruby .mini-stop-2 { stop-color: #d84b64; }
+    .evo-mini.ruby .mini-stop-3 { stop-color: #7f2030; }
+
+    .evo-btn {
+      border: 1px solid rgba(126, 255, 175, 0.65);
+      background: linear-gradient(135deg, #2ecf70, #1f9d54);
+      color: #ecfff4;
+      font-weight: 800;
+      font-size: 13px;
+      padding: 8px 12px;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: transform 0.15s ease, filter 0.2s ease;
+      white-space: nowrap;
+      box-shadow: 0 0 16px rgba(46, 207, 112, 0.35);
+    }
+
+    .evo-btn:hover {
+      transform: translateY(-1px);
+      filter: brightness(1.06);
+    }
+
+    .evo-btn:active {
+      transform: translateY(0) scale(0.98);
+    }
+
+    .evo-progress-text {
+      margin: 0;
+      font-size: 13px;
+      color: var(--muted);
+      transition: color 0.25s ease;
+    }
+
+    .score-panel {
+      width: 100%;
+      text-align: center;
+      padding: 24px 18px;
+      border-radius: 20px;
+      background: var(--glass);
+      border: 1px solid var(--glass-border);
+      box-shadow: 0 14px 40px rgba(0, 0, 0, 0.35);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+
+    .score {
+      margin: 0;
+      font-size: clamp(36px, 5.2vw, 52px);
+      font-weight: 800;
+      letter-spacing: 0.3px;
+      text-shadow: 0 0 18px rgba(126, 232, 255, 0.35);
+    }
+
+    .crystal-zone {
+      min-height: 0;
+      display: grid;
+      place-items: center;
+    }
+
+    .crystal-wrap {
+      position: relative;
+      width: clamp(300px, 58vmin, 560px);
+      aspect-ratio: 1 / 1;
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      border: none;
+      padding: 0;
+      background: transparent;
+      appearance: none;
+      -webkit-appearance: none;
+      outline: none;
+      touch-action: manipulation;
+    }
+
+    .crystal-wrap:focus { outline: none; }
+
+    .crystal-wrap:focus-visible {
+      outline: 3px solid rgba(126, 232, 255, 0.85);
+      outline-offset: 8px;
+      border-radius: 22px;
+    }
+
+    .crystal-wrap:active { background: transparent; }
+
+    .crystal {
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      filter: drop-shadow(0 0 18px rgba(126, 232, 255, 0.8)) drop-shadow(0 0 36px rgba(159, 141, 255, 0.6)) drop-shadow(0 10px 26px rgba(0, 0, 0, 0.35));
+      transform-origin: center;
+      animation: idleFloat 3.6s ease-in-out infinite;
+      transition: transform 0.1s ease, filter 0.25s ease;
+    }
+
+    .crystal-wrap.hit .crystal { animation: clickPulse 0.25s ease; }
+
+    .crystal .c-stop-1 { stop-color: #d8fdff; }
+    .crystal .c-stop-2 { stop-color: #7ed9ff; }
+    .crystal .c-stop-3 { stop-color: #8f78ff; }
+
+    .crystal-wrap.amethyst .crystal {
+      filter: drop-shadow(0 0 18px rgba(214, 155, 255, 0.85)) drop-shadow(0 0 36px rgba(167, 112, 255, 0.72)) drop-shadow(0 10px 26px rgba(0, 0, 0, 0.35));
+    }
+    .crystal-wrap.amethyst .crystal .c-stop-1 { stop-color: #f2d6ff; }
+    .crystal-wrap.amethyst .crystal .c-stop-2 { stop-color: #d69bff; }
+    .crystal-wrap.amethyst .crystal .c-stop-3 { stop-color: #9a5be2; }
+
+    .crystal-wrap.emerald .crystal {
+      filter: drop-shadow(0 0 14px rgba(125, 207, 138, 0.75)) drop-shadow(0 0 24px rgba(77, 139, 92, 0.55)) drop-shadow(0 10px 24px rgba(0, 0, 0, 0.35));
+    }
+    .crystal-wrap.emerald .crystal .c-stop-1 { stop-color: #d4ebd8; }
+    .crystal-wrap.emerald .crystal .c-stop-2 { stop-color: #7dcf8a; }
+    .crystal-wrap.emerald .crystal .c-stop-3 { stop-color: #4d8b5c; }
+
+    .crystal-wrap.ruby .crystal {
+      filter: drop-shadow(0 0 14px rgba(216, 75, 100, 0.76)) drop-shadow(0 0 24px rgba(127, 32, 48, 0.6)) drop-shadow(0 10px 24px rgba(0, 0, 0, 0.35));
+    }
+    .crystal-wrap.ruby .crystal .c-stop-1 { stop-color: #ffb7c4; }
+    .crystal-wrap.ruby .crystal .c-stop-2 { stop-color: #d84b64; }
+    .crystal-wrap.ruby .crystal .c-stop-3 { stop-color: #7f2030; }
+
+    .upgrades-panel {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding: 14px;
+      border-radius: 18px;
+      background: var(--glass);
+      border: 1px solid var(--glass-border);
+      box-shadow: 0 14px 30px rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      align-self: stretch;
+      justify-self: end;
+    }
+
+    .upgrades-title {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: 0.2px;
+    }
+
+    .upgrades-carousel {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding-right: 6px;
+      display: grid;
+      gap: 12px;
+      align-content: start;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .upgrades-carousel::-webkit-scrollbar { width: 10px; }
+    .upgrades-carousel::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 999px;
+    }
+    .upgrades-carousel::-webkit-scrollbar-thumb {
+      background: linear-gradient(180deg, rgba(126, 232, 255, 0.8), rgba(159, 141, 255, 0.85));
+      border-radius: 999px;
+      border: 2px solid rgba(0, 0, 0, 0.15);
+    }
+
+    .upgrade-card {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      border-radius: 14px;
+      padding: 12px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .upgrade-name {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .upgrade-desc {
+      margin: 0;
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.35;
+    }
+
+    .upgrade-buy {
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      background: var(--glass-strong);
+      color: var(--text);
+      font-weight: 700;
+      font-size: 14px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: transform 0.15s ease, background 0.2s ease, opacity 0.2s ease;
+    }
+
+    .upgrade-buy:hover:not(:disabled) {
+      transform: translateY(-1px);
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .upgrade-buy:active:not(:disabled) { transform: translateY(0) scale(0.98); }
+
+    .upgrade-buy:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .upgrade-buy.purchased {
+      opacity: 1;
+      background: rgba(126, 255, 217, 0.2);
+      border-color: rgba(126, 255, 217, 0.5);
+      color: var(--good);
+      cursor: default;
+    }
+
+    .plus-one {
+      position: fixed;
+      left: 0;
+      top: 0;
+      transform: translate(-50%, -50%);
+      font-weight: 800;
+      font-size: clamp(22px, 5vw, 28px);
+      color: #b9f3ff;
+      text-shadow: 0 0 8px rgba(126, 232, 255, 0.95), 0 0 18px rgba(159, 141, 255, 0.8);
+      pointer-events: none;
+      animation: riseFade 0.9s ease-out forwards;
+      z-index: 10;
+      will-change: transform, opacity;
+      white-space: nowrap;
+    }
+
+    .plus-one.crit {
+      color: var(--crit);
+      text-shadow: 0 0 10px rgba(255, 211, 105, 0.95), 0 0 20px rgba(255, 159, 67, 0.85);
+    }
+
+    @keyframes idleFloat {
+      0%, 100% { transform: translateY(0) scale(1); }
+      50% { transform: translateY(-8px) scale(1.02); }
+    }
+
+    @keyframes clickPulse {
+      0% { transform: scale(1); }
+      45% { transform: scale(0.92); }
+      100% { transform: scale(1.03); }
+    }
+
+    @keyframes riseFade {
+      0%   { opacity: 0; transform: translate(-50%, -35%) scale(0.8); }
+      15%  { opacity: 1; }
+      100% { opacity: 0; transform: translate(-50%, -190%) scale(1.15); }
+    }
+
+    @media (max-width: 980px) {
+      body { overflow: auto; }
+
+      .app {
+        height: auto;
+        width: 100%;
+        margin-left: 0;
+        grid-template-columns: 1fr;
+      }
+
+      body.panel-open .app {
+        width: 100%;
+        margin-left: 0;
+      }
+
+      .upgrades-panel {
+        height: 360px;
+      }
+
+      .evo-row {
+        grid-template-columns: 1fr auto;
+      }
+
+      .evo-btn {
+        grid-column: 1 / -1;
+        justify-self: end;
+      }
+
+      .crystal-wrap {
+        width: clamp(240px, 70vw, 420px);
+      }
+
+      .info-toggle {
+        top: auto;
+        bottom: 18px;
+        transform: none;
+        height: 56px;
+        width: 110px;
+      }
+
+      .info-toggle:hover {
+        transform: translateX(2px);
+      }
+
+      .info-panel {
+        left: 12px;
+        right: 12px;
+        width: auto;
+        top: auto;
+        bottom: 82px;
+        max-height: 56vh;
+      }
+    }
+  </style>
+</head>
+<body>
+  <button class="info-toggle" id="infoToggleBtn" aria-label="Открыть панель эволюций">
+    <svg viewBox="0 0 220 220" aria-hidden="true">
+      <defs>
+        <linearGradient id="btnCrystal" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#dbfeff" stop-opacity="0.38" />
+          <stop offset="50%" stop-color="#8fe0ff" stop-opacity="0.25" />
+          <stop offset="100%" stop-color="#bea7ff" stop-opacity="0.28" />
+        </linearGradient>
+      </defs>
+      <polygon points="110,24 176,72 154,164 66,164 44,72" fill="url(#btnCrystal)" stroke="rgba(255,255,255,0.4)" stroke-width="2" />
+    </svg>
+  </button>
+
+  <aside class="info-panel" id="infoPanel">
+    <h2 class="info-title">Эволюции</h2>
+    <div class="info-list">
+      <article class="info-card">
+        <div class="info-card-head">
+          <h3 class="info-name">Аметист</h3>
+          <span class="state-badge inactive" id="stateAme">Неактивно</span>
+        </div>
+        <p class="info-desc">Бонус: +5% к шансу CRIT.</p>
+      </article>
+
+      <article class="info-card">
+        <div class="info-card-head">
+          <h3 class="info-name">Изумруд</h3>
+          <span class="state-badge inactive" id="stateEme">Неактивно</span>
+        </div>
+        <p class="info-desc">Бонус: +100% к скорости автодобычи и +1 к ручной добыче.</p>
+      </article>
+
+      <article class="info-card">
+        <div class="info-card-head">
+          <h3 class="info-name">Рубин</h3>
+          <span class="state-badge inactive" id="stateRub">Неактивно</span>
+        </div>
+        <p class="info-desc">Бонус: +5 к ручной добыче, автодобыча без улучшения (+1/с), +2/с при купленной автодобыче, +5% к шансу CRIT.</p>
+      </article>
+    </div>
+  </aside>
+
+  <main class="app">
+    <div class="left-stack">
+      <section class="evo-track-panel">
+        <div class="evo-top">
+          <span id="evoLabel">Следующая эволюция: <strong style="color: var(--amethyst);">Аметист</strong></span>
+          <span id="evoPercent">0%</span>
+        </div>
+
+        <div class="evo-row">
+          <div class="evo-track">
+            <div class="evo-fill" id="evoFill"></div>
+          </div>
+
+          <div class="evo-end">
+            <svg class="evo-mini amethyst" id="evoMini" viewBox="0 0 220 220" aria-hidden="true">
+              <defs>
+                <linearGradient id="miniGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop class="mini-stop-1" offset="0%" />
+                  <stop class="mini-stop-2" offset="50%" />
+                  <stop class="mini-stop-3" offset="100%" />
+                </linearGradient>
+              </defs>
+              <polygon points="110,12 178,62 154,172 66,172 42,62" fill="url(#miniGrad)" />
+            </svg>
+            <span class="evo-end-name" id="evoEndName">Аметист</span>
+          </div>
+
+          <button class="evo-btn" id="evolveBtn" type="button" hidden>Эволюция</button>
+        </div>
+
+        <p class="evo-progress-text" id="evoProgressText">0 / 2500 кристаллов</p>
+      </section>
+
+      <section class="score-panel">
+        <h1 class="score" id="score">Кристаллы: 0</h1>
+      </section>
+
+      <div class="crystal-zone">
+        <button class="crystal-wrap" id="crystalBtn" aria-label="Нажать на кристалл" type="button">
+          <svg class="crystal" viewBox="0 0 220 220" aria-hidden="true">
+            <defs>
+              <linearGradient id="crystalGradMain" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop class="c-stop-1" offset="0%" stop-opacity="0.98" />
+                <stop class="c-stop-2" offset="50%" stop-opacity="0.9" />
+                <stop class="c-stop-3" offset="100%" stop-opacity="0.92" />
+              </linearGradient>
+              <linearGradient id="crystalFacetA" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stop-color="#ffffff" stop-opacity="0.65" />
+                <stop offset="100%" stop-color="#a8f2ff" stop-opacity="0.08" />
+              </linearGradient>
+              <linearGradient id="crystalFacetB" x1="100%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stop-color="#ffffff" stop-opacity="0.4" />
+                <stop offset="100%" stop-color="#c7b4ff" stop-opacity="0.08" />
+              </linearGradient>
+            </defs>
+
+            <polygon points="110,12 178,62 154,172 66,172 42,62" fill="url(#crystalGradMain)" />
+            <polygon points="110,12 178,62 110,96 42,62" fill="url(#crystalFacetA)" />
+            <polygon points="66,172 110,96 154,172" fill="url(#crystalFacetB)" />
+            <polyline points="42,62 110,96 178,62" stroke="rgba(255,255,255,.55)" stroke-width="2" fill="none" />
+            <line x1="110" y1="12" x2="110" y2="96" stroke="rgba(255,255,255,.45)" stroke-width="2" />
+            <line x1="110" y1="96" x2="66" y2="172" stroke="rgba(255,255,255,.35)" stroke-width="2" />
+            <line x1="110" y1="96" x2="154" y2="172" stroke="rgba(255,255,255,.35)" stroke-width="2" />
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <aside class="upgrades-panel">
+      <h2 class="upgrades-title">Улучшения</h2>
+      <div class="upgrades-carousel">
+        <article class="upgrade-card">
+          <h3 class="upgrade-name">Сила кристалла</h3>
+          <p class="upgrade-desc" id="powerDesc">Уровень 0/5. Первое улучшение: +1 к ручной добыче.</p>
+          <button class="upgrade-buy" id="buyPower" type="button">Купить за 100 кристаллов</button>
+        </article>
+
+        <article class="upgrade-card">
+          <h3 class="upgrade-name">Автодобыча</h3>
+          <p class="upgrade-desc">Каждую секунду автоматически добавляет 1 кристалл.</p>
+          <button class="upgrade-buy" id="buyAuto" type="button">Купить за 500 кристаллов</button>
+        </article>
+
+        <article class="upgrade-card">
+          <h3 class="upgrade-name">CRIT режим</h3>
+          <p class="upgrade-desc">10% шанс на крит при ручном нажатии (x2 от ручной добычи).</p>
+          <button class="upgrade-buy" id="buyCrit" type="button">Купить за 1000 кристаллов</button>
+        </article>
+
+        <article class="upgrade-card">
+          <h3 class="upgrade-name">Благословение Кристалла</h3>
+          <p class="upgrade-desc" id="blessDesc">Каждый 10-й ручной клик: CRIT x2.5, а также +1 к ручной добыче.</p>
+          <button class="upgrade-buy" id="buyBless" type="button">Купить за 2500 кристаллов</button>
+        </article>
+      </div>
+    </aside>
+  </main>
+
+  <script>
+    (function () {
+      const STORAGE_KEY = "crystal_clicker_state_v7";
+      const POWER_COSTS = [100, 250, 500, 750, 1000];
+      const AUTO_COST = 500;
+      const CRIT_COST = 1000;
+      const BLESS_COST = 2500;
+
+      const EVOLUTIONS = [
+        { id: "amethyst", name: "Аметист", cost: 2500, bonusText: "+5% к шансу CRIT", color: "var(--amethyst)" },
+        { id: "emerald", name: "Изумруд", cost: 5000, bonusText: "+100% к скорости автодобычи и +1 к ручной добыче", color: "var(--emerald)" },
+        { id: "ruby", name: "Рубин", cost: 10000, bonusText: "+5 к ручной добыче, автодобыча +1/+2 в сек., +5% к шансу CRIT", color: "var(--ruby)" }
+      ];
+
+      const scoreEl = document.getElementById("score");
+      const crystalBtn = document.getElementById("crystalBtn");
+      const powerDescEl = document.getElementById("powerDesc");
+      const buyPowerBtn = document.getElementById("buyPower");
+      const buyAutoBtn = document.getElementById("buyAuto");
+      const buyCritBtn = document.getElementById("buyCrit");
+      const buyBlessBtn = document.getElementById("buyBless");
+      const blessDescEl = document.getElementById("blessDesc");
+
+      const evoLabelEl = document.getElementById("evoLabel");
+      const evoFillEl = document.getElementById("evoFill");
+      const evoPercentEl = document.getElementById("evoPercent");
+      const evoProgressTextEl = document.getElementById("evoProgressText");
+      const evoMiniEl = document.getElementById("evoMini");
+      const evoEndNameEl = document.getElementById("evoEndName");
+      const evolveBtn = document.getElementById("evolveBtn");
+
+      const infoToggleBtn = document.getElementById("infoToggleBtn");
+      const infoPanel = document.getElementById("infoPanel");
+      const stateAmeEl = document.getElementById("stateAme");
+      const stateEmeEl = document.getElementById("stateEme");
+      const stateRubEl = document.getElementById("stateRub");
+
+      const defaultState = {
+        clicks: 0,
+        powerLevel: 0,
+        autoClickUnlocked: false,
+        critUnlocked: false,
+        blessingUnlocked: false,
+        blessingCounter: 0,
+        evolutionTier: 0
+      };
+
+      let autoTimer = null;
+
+      function clampPowerLevel(value) {
+        if (!Number.isFinite(value)) return 0;
+        return Math.max(0, Math.min(POWER_COSTS.length, Math.floor(value)));
+      }
+
+      function clampEvolutionTier(value) {
+        if (!Number.isFinite(value)) return 0;
+        return Math.max(0, Math.min(EVOLUTIONS.length, Math.floor(value)));
+      }
+
+      function loadState() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          if (!raw) return { ...defaultState };
+
+          const parsed = JSON.parse(raw);
+
+          let powerLevel = parsed.powerLevel;
+          if (!Number.isFinite(powerLevel)) powerLevel = parsed.bonusPerClick === 1 ? 1 : 0;
+
+          let evolutionTier = parsed.evolutionTier;
+          if (!Number.isFinite(evolutionTier)) {
+            if (parsed.rubyUnlocked) evolutionTier = 3;
+            else if (parsed.emeraldUnlocked) evolutionTier = 2;
+            else if (parsed.amethystUnlocked) evolutionTier = 1;
+            else evolutionTier = 0;
+          }
+
+          return {
+            clicks: Number.isFinite(parsed.clicks) && parsed.clicks >= 0 ? parsed.clicks : 0,
+            powerLevel: clampPowerLevel(powerLevel),
+            autoClickUnlocked: Boolean(parsed.autoClickUnlocked),
+            critUnlocked: Boolean(parsed.critUnlocked),
+            blessingUnlocked: Boolean(parsed.blessingUnlocked),
+            blessingCounter: Number.isFinite(parsed.blessingCounter) && parsed.blessingCounter >= 0 ? Math.floor(parsed.blessingCounter) : 0,
+            evolutionTier: clampEvolutionTier(evolutionTier)
+          };
+        } catch (_) {
+          return { ...defaultState };
+        }
+      }
+
+      let state = loadState();
+
+      function saveState() {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      }
+
+      function getCurrentEvolution() {
+        return state.evolutionTier > 0 ? EVOLUTIONS[state.evolutionTier - 1] : null;
+      }
+
+      function getNextEvolution() {
+        return state.evolutionTier < EVOLUTIONS.length ? EVOLUTIONS[state.evolutionTier] : null;
+      }
+
+      function hasAmethystBonus() {
+        return state.evolutionTier >= 1;
+      }
+
+      function hasEmeraldBonus() {
+        return state.evolutionTier >= 2;
+      }
+
+      function hasRubyBonus() {
+        return state.evolutionTier >= 3;
+      }
+
+      function manualClickValue() {
+        return 1
+          + state.powerLevel
+          + (state.blessingUnlocked ? 1 : 0)
+          + (hasEmeraldBonus() ? 1 : 0)
+          + (hasRubyBonus() ? 5 : 0);
+      }
+
+      function autoTickGain() {
+        const rubyBase = hasRubyBonus() ? 1 : 0;
+        const upgradeBase = state.autoClickUnlocked ? 1 : 0;
+        return rubyBase + upgradeBase;
+      }
+
+      function autoIntervalMs() {
+        return hasEmeraldBonus() ? 500 : 1000;
+      }
+
+      function stopAutoClicker() {
+        if (!autoTimer) return;
+        clearInterval(autoTimer);
+        autoTimer = null;
+      }
+
+      function startAutoClickerIfNeeded() {
+        if (autoTickGain() <= 0 || autoTimer) return;
+        autoTimer = setInterval(function () {
+          state.clicks += autoTickGain();
+          saveState();
+          render();
+        }, autoIntervalMs());
+      }
+
+      function restartAutoClickerIfNeeded() {
+        stopAutoClicker();
+        startAutoClickerIfNeeded();
+      }
+
+      function setBadge(el, active) {
+        el.classList.remove("active", "inactive");
+        el.classList.add(active ? "active" : "inactive");
+        el.textContent = active ? "Активно" : "Неактивно";
+      }
+
+      function markButtonPurchased(button, text) {
+        button.disabled = true;
+        button.classList.add("purchased");
+        button.textContent = text;
+      }
+
+      function renderPowerUpgrade() {
+        const level = state.powerLevel;
+        const maxLevel = POWER_COSTS.length;
+
+        if (level >= maxLevel) {
+          powerDescEl.textContent = "Уровень " + level + "/" + maxLevel + ". Максимальная сила: +" + level + " к ручной добыче.";
+          markButtonPurchased(buyPowerBtn, "Макс. уровень");
+          return;
+        }
+
+        const nextCost = POWER_COSTS[level];
+        const nextBonus = level + 1;
+
+        buyPowerBtn.classList.remove("purchased");
+        buyPowerBtn.disabled = state.clicks < nextCost;
+        buyPowerBtn.textContent = "Улучшить за " + nextCost + " кристаллов";
+        powerDescEl.textContent = "Уровень " + level + "/" + maxLevel + ". Следующий уровень даст +" + nextBonus + " к ручной добыче.";
+      }
+
+      function renderBlessingUpgrade() {
+        if (state.blessingUnlocked) {
+          const untilProc = 10 - (state.blessingCounter % 10 || 10);
+          blessDescEl.textContent = "Активно. Каждый 10-й клик: CRIT x2.5. Следующий усиленный крит через " + untilProc + " кликов.";
+          markButtonPurchased(buyBlessBtn, "Куплено");
+        } else {
+          blessDescEl.textContent = "Каждый 10-й ручной клик: CRIT x2.5, а также +1 к ручной добыче.";
+          buyBlessBtn.classList.remove("purchased");
+          buyBlessBtn.textContent = "Купить за " + BLESS_COST + " кристаллов";
+          buyBlessBtn.disabled = state.clicks < BLESS_COST;
+        }
+      }
+
+      function renderInfoPanel() {
+        setBadge(stateAmeEl, hasAmethystBonus());
+        setBadge(stateEmeEl, hasEmeraldBonus());
+        setBadge(stateRubEl, hasRubyBonus());
+      }
+
+      function setEvolutionBonusText(text, colorVar) {
+        evoProgressTextEl.textContent = text;
+        evoProgressTextEl.style.color = colorVar ? colorVar : "var(--muted)";
+      }
+
+      function evolutionNameHtml(evo) {
+        return '<strong style="color:' + evo.color + ';">' + evo.name + "</strong>";
+      }
+
+      function renderEvolutionTrack() {
+        const current = getCurrentEvolution();
+        const next = getNextEvolution();
+
+        crystalBtn.classList.toggle("amethyst", state.evolutionTier === 1);
+        crystalBtn.classList.toggle("emerald", state.evolutionTier === 2);
+        crystalBtn.classList.toggle("ruby", state.evolutionTier === 3);
+
+        evoMiniEl.classList.remove("amethyst", "emerald", "ruby");
+        if (current) {
+          evoMiniEl.classList.add(current.id);
+          evoEndNameEl.textContent = current.name;
+          evoEndNameEl.style.color = current.color;
+        } else if (next) {
+          evoMiniEl.classList.add(next.id);
+          evoEndNameEl.textContent = next.name;
+          evoEndNameEl.style.color = next.color;
+        }
+
+        if (!next && current) {
+          evoLabelEl.textContent = "Максимальная эволюция";
+        } else if (current && next) {
+          evoLabelEl.innerHTML = "Текущая эволюция: " + evolutionNameHtml(current) + " -> Следующая: " + evolutionNameHtml(next);
+        } else if (!current && next) {
+          evoLabelEl.innerHTML = "Следующая эволюция: " + evolutionNameHtml(next);
+        }
+
+        if (next) {
+          const progress = Math.min(state.clicks / next.cost, 1);
+          const percent = Math.floor(progress * 100);
+          evoFillEl.style.width = percent + "%";
+          evoPercentEl.textContent = percent + "%";
+          evolveBtn.hidden = state.clicks < next.cost;
+          evolveBtn.textContent = "Эволюция";
+
+          if (current) {
+            setEvolutionBonusText("Бонус эволюции: " + current.bonusText, current.color);
+          } else {
+            setEvolutionBonusText(Math.min(state.clicks, next.cost) + " / " + next.cost + " кристаллов", "");
+          }
+        } else if (current) {
+          evoFillEl.style.width = "100%";
+          evoPercentEl.textContent = "100%";
+          evolveBtn.hidden = true;
+          setEvolutionBonusText("Бонус эволюции: " + current.bonusText, current.color);
+        }
+      }
+
+      function render() {
+        scoreEl.textContent = "Кристаллы: " + state.clicks;
+
+        renderPowerUpgrade();
+        renderBlessingUpgrade();
+        renderEvolutionTrack();
+        renderInfoPanel();
+
+        if (state.autoClickUnlocked) {
+          markButtonPurchased(buyAutoBtn, "Куплено");
+        } else {
+          buyAutoBtn.classList.remove("purchased");
+          buyAutoBtn.textContent = "Купить за " + AUTO_COST + " кристаллов";
+          buyAutoBtn.disabled = state.clicks < AUTO_COST;
+        }
+
+        if (state.critUnlocked) {
+          markButtonPurchased(buyCritBtn, "Куплено");
+        } else {
+          buyCritBtn.classList.remove("purchased");
+          buyCritBtn.textContent = "Купить за " + CRIT_COST + " кристаллов";
+          buyCritBtn.disabled = state.clicks < CRIT_COST;
+        }
+      }
+
+      function spawnGainText(value, x, y, critType) {
+        const plus = document.createElement("span");
+        plus.className = "plus-one" + (critType ? " crit" : "");
+        if (critType === "bless") plus.textContent = "+" + value + " MEGA CRIT!";
+        else if (critType === "normal") plus.textContent = "+" + value + " CRIT!";
+        else plus.textContent = "+" + value;
+        plus.style.left = x + "px";
+        plus.style.top = y + "px";
+        document.body.appendChild(plus);
+        plus.addEventListener("animationend", function () {
+          plus.remove();
+        }, { once: true });
+      }
+
+      function animateCrystal() {
+        crystalBtn.classList.remove("hit");
+        void crystalBtn.offsetWidth;
+        crystalBtn.classList.add("hit");
+      }
+
+      infoToggleBtn.addEventListener("click", function () {
+        const open = infoPanel.classList.toggle("open");
+        document.body.classList.toggle("panel-open", open);
+      });
+
+      crystalBtn.addEventListener("click", function (event) {
+        const base = manualClickValue();
+
+        let critType = "";
+        let gain = base;
+
+        if (state.blessingUnlocked) {
+          state.blessingCounter += 1;
+          if (state.blessingCounter % 10 === 0) {
+            critType = "bless";
+            gain = Math.round(base * 2.5);
+          }
+        }
+
+        if (!critType) {
+          const critChance =
+            (state.critUnlocked ? 0.10 : 0) +
+            (hasAmethystBonus() ? 0.05 : 0) +
+            (hasRubyBonus() ? 0.05 : 0);
+
+          if (Math.random() < critChance) {
+            critType = "normal";
+            gain = base * 2;
+          }
+        }
+
+        state.clicks += gain;
+        saveState();
+        render();
+        spawnGainText(gain, event.clientX, event.clientY, critType);
+        animateCrystal();
+      });
+
+      buyPowerBtn.addEventListener("click", function () {
+        if (state.powerLevel >= POWER_COSTS.length) return;
+        const cost = POWER_COSTS[state.powerLevel];
+        if (state.clicks < cost) return;
+
+        state.clicks -= cost;
+        state.powerLevel += 1;
+        saveState();
+        render();
+      });
+
+      buyAutoBtn.addEventListener("click", function () {
+        if (state.autoClickUnlocked || state.clicks < AUTO_COST) return;
+        state.clicks -= AUTO_COST;
+        state.autoClickUnlocked = true;
+        saveState();
+        restartAutoClickerIfNeeded();
+        render();
+      });
+
+      buyCritBtn.addEventListener("click", function () {
+        if (state.critUnlocked || state.clicks < CRIT_COST) return;
+        state.clicks -= CRIT_COST;
+        state.critUnlocked = true;
+        saveState();
+        render();
+      });
+
+      buyBlessBtn.addEventListener("click", function () {
+        if (state.blessingUnlocked || state.clicks < BLESS_COST) return;
+        state.clicks -= BLESS_COST;
+        state.blessingUnlocked = true;
+        state.blessingCounter = 0;
+        saveState();
+        render();
+      });
+
+      evolveBtn.addEventListener("click", function () {
+        const next = getNextEvolution();
+        if (!next || state.clicks < next.cost) return;
+
+        state.evolutionTier += 1;
+        state.clicks = 0;
+        state.powerLevel = 0;
+        state.autoClickUnlocked = false;
+        state.critUnlocked = false;
+        state.blessingUnlocked = false;
+        state.blessingCounter = 0;
+
+        stopAutoClicker();
+        saveState();
+        restartAutoClickerIfNeeded();
+        render();
+      });
+
+      restartAutoClickerIfNeeded();
+      render();
+    })();
+  </script>
+</body>
+</html>
